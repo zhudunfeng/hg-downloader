@@ -84,5 +84,23 @@ FFmpeg / FFprobe 仍需通过系统 PATH、自定义路径或项目 tools 目录
 定位并升级至 6.22.3。文档与许可证在打包后复制，避免 `build/` 内生成的 spec
 改变相对数据文件的解析路径。验证没有新增单元测试类。
 
-工作流尚未推送或在 GitHub 托管 runner 上执行；需提交到默认分支后，通过
-Actions 的 Run workflow 验证首次远程构建和 Artifacts 上传。
+首次 GitHub 托管构建在运行包 `--help` 检查中失败：冻结解释器选择了 CP1252，
+输出中文描述时触发 `UnicodeEncodeError`。以下修复已在本地重新构建验证，
+提交后需通过 Actions 的 Run workflow 发起新构建，确认托管执行与 Artifacts 上传。
+
+### Windows 中文编码修复
+
+打包参数增加 `--python-option 'X utf8'`，将 UTF-8 模式写入 exe 内的解释器参数。
+检查步骤改为捕获 `--help` 的原始输出字节，严格按 UTF-8 解码并断言中文描述，
+避免只依赖本机中文系统代码页。
+
+2026-11-24 验证结果：
+
+- 源码入口在强制 `PYTHONIOENCODING=cp1252` 并重定向输出时，复现相同异常。
+- 旧运行包在本机输出 GBK 字节，不能通过新增的 UTF-8 内容校验。
+- 原样执行修复后的工作流构建、检查和压缩脚本，全部通过。
+- 设置 `PYTHONIOENCODING=cp1252`、`PYTHONUTF8=0` 后，工作流检查仍通过。
+- 从 ZIP 解压运行包并清空 PATH，中文帮助和参数错误输出均可严格按 UTF-8 解码；
+  帮助退出码为 0，参数错误退出码为 2。
+- actionlint、YAML 手动触发约束、三段 PowerShell AST、内嵌 Python 语法检查通过。
+- 未修改 Python 业务代码，未新增单元测试类。

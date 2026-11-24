@@ -73,6 +73,8 @@ jobs:
             '--contents-directory', '.'
             # 保留从终端启动时的命令行输出能力。
             '--console'
+            # 将 UTF-8 模式写入冻结解释器，避免英文系统按 CP1252 输出中文。
+            '--python-option', 'X utf8'
             # 双击启动时隐藏程序自行创建的控制台。
             '--hide-console', 'hide-early'
             # 不使用额外的 UPX 压缩工具。
@@ -113,11 +115,20 @@ jobs:
           if (-not (Test-Path -LiteralPath 'dist/HG-Downloader/HG-Downloader.exe')) {
             throw "未找到构建生成的 HG-Downloader.exe。"
           }
-          & './dist/HG-Downloader/HG-Downloader.exe' --help
+          # 捕获原始输出并严格按 UTF-8 解码，避免本机控制台编码掩盖中文异常。
+          python -c @'
+          import subprocess
+          result = subprocess.run(
+              ['./dist/HG-Downloader/HG-Downloader.exe', '--help'],
+              capture_output=True, timeout=30, check=True,
+          )
+          assert '黄果视频下载器' in result.stdout.decode('utf-8'), '运行包中文帮助输出异常。'
+          '@
           # 命令行冒烟检查失败时禁止上传。
           if ($LASTEXITCODE -ne 0) {
             throw "运行包命令行检查失败。"
           }
+          Write-Host "中文帮助 UTF-8 输出检查通过。"
           Write-Host "运行包检查通过，正在压缩完整目录……"
           Compress-Archive -Path 'dist/HG-Downloader' -DestinationPath 'dist/hg-downloader-windows-x64.zip' -Force
           Write-Host "运行包已生成，准备上传构建产物。"

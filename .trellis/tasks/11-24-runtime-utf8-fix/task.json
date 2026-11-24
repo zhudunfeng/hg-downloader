@@ -1,0 +1,30 @@
+{
+  "id": "runtime-utf8-fix",
+  "name": "runtime-utf8-fix",
+  "title": "修复 Windows 运行包中文帮助编码异常",
+  "description": "",
+  "status": "completed",
+  "dev_type": "backend",
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "adun",
+  "assignee": "adun",
+  "createdAt": "2026-11-24",
+  "completedAt": "2026-11-24",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    ".github/workflows/build-runtime.yml",
+    ".trellis/spec/backend/runtime-build-contract.md",
+    "VERIFICATION.md"
+  ],
+  "notes": "已嵌入X utf8并增加重定向中文断言；CP1252源码复现、原始工作流打包、解压exe UTF8 stdout/stderr和独立静态检查均通过。待提交后新建手动运行。",
+  "meta": {}
+}
