@@ -1,0 +1,61 @@
+# 验证记录
+
+验证日期：2026-11-24（Asia/Shanghai）。
+
+## 自动回归
+
+本次开发运行了 10 项本地回归测试，全部通过。使用临时 HTTP 服务与 FFmpeg
+生成的合成 AES-128 HLS，不依赖目标网站：
+
+| 验证项 | 结果 |
+|---|---|
+| 视频 URL、查询参数、默认集数、集数范围 | 通过 |
+| 文件名净化、请求头注入拒绝 | 通过 |
+| UAV 页面元数据和分集链接解析 | 通过 |
+| UAV Retry-After 秒数和日期解析 | 通过 |
+| 加密 HLS 下载、音视频封装、已有文件跳过 | 通过 |
+| 元数据 API 失败后 HTML 备用解析、403 拒绝访问 | 通过 |
+| 临时 API 失败后重试 | 通过 |
+| 服务端要求长时间等待时不立即重试 | 通过 |
+| 缺失分片时拒绝发布输出 | 通过 |
+| 取消时回收 FFmpeg 并清理临时文件 | 通过 |
+
+另外执行了桌面界面完整流程检查：解析本地视频、默认选择当前集、开始下载、
+接收进度和完成事件、恢复按钮状态，最终生成一份有效 MP4。
+
+按 AGENTS.md“每次代码生成的单元测试类在完成任务后自动清除”的要求，
+测试代码在最终验证后移除，此处保留覆盖范围与结果。
+
+## 目标站实测
+
+| 项目 | 结果 |
+|---|---|
+| 视频 ID 14117 元数据 | 获取 3 集，时长分别为 360 / 325 / 479 秒 |
+| UAV 派生 HTML 备用解析 | 正确返回 3 集 |
+| 第一集 main 样本 | H.264 + AAC，5.087667 秒 |
+| 第一集 HEVC 样本 | HEVC + AAC，5.066667 秒 |
+| 第二集完整下载 | H.264 + AAC，325.103197 秒，48,041,169 字节 |
+| 第二集 HEVC 不可用 | 正确报错，不替换为预览或其他编码 |
+
+完整视频保存在 `downloads/verification/`，不包含在构建包内。
+
+## 可重复执行的快速检查
+
+在项目根目录执行：
+
+```powershell
+python -m compileall -q hg_downloader run.py
+python run.py 14117 --list --json --all
+python run.py 14117 --sample-seconds 5 -o downloads\verification
+python run.py 14117 --sample-seconds 5 --stream hevc -o downloads\verification
+python run.py 14117 -e 2 -o downloads\verification
+python -m pip wheel . --no-deps --no-build-isolation --wheel-dir dist
+```
+
+网站检查需要当前网站可访问；站点接口和内容可能变化。样本按关键帧流复制，
+所以可能比指定秒数略长。重复下载会先校验已有文件，再跳过。
+
+## 打包
+
+已验证 wheel 构建成功，并包含派生代码、完整上游 Apache 2.0 许可证和第三方来源说明。
+FFmpeg / FFprobe 仍需通过系统 PATH、自定义路径或项目 tools 目录提供。

@@ -1,0 +1,6 @@
+include README.md
+include THIRD_PARTY_NOTICES.md
+include VERIFICATION.md
+include start.bat
+include run.py
+recursive-include licenses *.txt

@@ -1,0 +1,31 @@
+[build-system]
+# 使用 setuptools 构建标准 Python wheel。
+requires = ["setuptools>=68"]
+# 指定项目的构建后端。
+build-backend = "setuptools.build_meta"
+
+[project]
+# Python 包的发布名称。
+name = "hg-downloader"
+# 当前应用版本号。
+version = "1.0.0"
+# 安装工具显示的中文项目简介。
+description = "黄果视频下载器：中文桌面界面、批量剧集和 FFmpeg MP4 下载"
+# 安装包使用的详细说明文件。
+readme = "README.md"
+# 最低 Python 版本，支持内置泛型和联合类型注解。
+requires-python = ">=3.10"
+# 应用运行仅依赖标准库，FFmpeg 作为外部工具提供。
+dependencies = []
+
+[project.scripts]
+# 安装后生成的命令行入口。
+hg-downloader = "hg_downloader.cli:main"
+
+[tool.setuptools]
+# 将第三方完整许可证和来源记录装入 wheel。
+license-files = ["licenses/*.txt", "THIRD_PARTY_NOTICES.md"]
+
+[tool.setuptools.packages.find]
+# 仅发布下载器代码，排除工作流和验证产物。
+include = ["hg_downloader*"]
