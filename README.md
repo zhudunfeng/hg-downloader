@@ -22,6 +22,30 @@ python run.py
 首页链接只有站点地址，不指向具体视频，不能直接下载。链接中的统计查询参数会自动去除。
 默认只下载链接对应的一集；从 `ep-2` 链接解析时会默认选中第二集。
 
+## 手动构建 Windows 运行包
+
+GitHub Actions 提供 **“手动构建 Windows 运行包”** 工作流，**仅手动触发**。
+推送代码、提交 PR 或创建标签都不会自动构建。
+
+1. 将 `.github/workflows/build-runtime.yml` 提交到仓库默认分支；工作流在默认分支存在后，才会显示手动运行入口。
+2. 打开仓库 **Actions**，选择 **手动构建 Windows 运行包**。
+3. 点击 **Run workflow**，选择需要构建的分支，再点击运行按钮。
+4. 构建成功后，打开本次运行记录，在 **Artifacts** 下载 `hg-downloader-windows-x64`。
+5. 解压下载的构建产物 ZIP，再解压其中的 `hg-downloader-windows-x64.zip`，保留完整的 `HG-Downloader` 目录。
+6. 双击目录内的 `HG-Downloader.exe` 打开桌面界面；运行包自带 Python 和 Tkinter，无需另行安装 Python。
+
+在解压目录中，也可以使用 PowerShell 启动命令行：
+
+```powershell
+.\HG-Downloader.exe --help
+.\HG-Downloader.exe 14117 --all -o "D:\Videos"
+```
+
+运行包仍需要 **FFmpeg 和 FFprobe**。可将 FFmpeg 的 `bin` 目录加入系统 PATH，
+或将该目录内的 `ffmpeg.exe`、`ffprobe.exe` 及其依赖 DLL 放入
+`HG-Downloader/tools/`，也可以使用 `--ffmpeg`、`--ffprobe` 指定工具位置。
+请保留运行包内全部依赖文件，不能只复制 exe。产物默认保留 14 天，过期后可再次手动构建。
+
 ## 命令行
 
 ```powershell

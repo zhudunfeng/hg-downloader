@@ -1,0 +1,140 @@
+# 在 Actions 页面显示的工作流名称。
+name: 手动构建 Windows 运行包
+
+# 只接受用户在 Actions 页面或通过 API 发起的手动运行。
+on:
+  # 不配置自动触发事件，也不要求额外输入参数。
+  workflow_dispatch:
+
+# 构建只需要读取仓库，不授予发布或写入权限。
+permissions:
+  # 允许检出当前选择的分支或提交。
+  contents: read
+
+# 统一配置脚本的执行环境。
+defaults:
+  # 所有命令步骤共用以下设置。
+  run:
+    # 使用 PowerShell 7，脚本错误会使步骤失败。
+    shell: pwsh
+
+# 构建任务列表。
+jobs:
+  # Windows x64 便携运行包构建任务。
+  build-windows:
+    # 在运行页面显示的任务名称。
+    name: Windows x64 运行包
+    # Windows 原生构建，确保生成可在 Windows 运行的可执行文件。
+    runs-on: windows-2025
+    # 限制异常构建占用运行器的最长分钟数。
+    timeout-minutes: 20
+    # 按顺序执行检出、安装、打包、验证和上传。
+    steps:
+      # 获取本次手动选择的代码版本。
+      - name: 检出项目代码
+        # 使用官方代码检出操作。
+        uses: actions/checkout@v7
+
+      # 安装包含 Tkinter 的 Python 构建环境。
+      - name: 配置 Python
+        # 使用官方 Python 环境配置操作。
+        uses: actions/setup-python@v7
+        # Python 安装参数。
+        with:
+          # 与本地打包验证保持相同的 Python 次版本。
+          python-version: '3.14'
+          # 固定生成 Windows 64 位运行包。
+          architecture: x64
+
+      # 仅安装构建工具，应用运行代码不增加第三方 Python 依赖。
+      - name: 安装打包工具
+        # 安装固定版本，避免打包行为随版本漂移。
+        run: |
+          Write-Host "正在安装 PyInstaller 打包工具……"
+          python -m pip install --disable-pip-version-check "pyinstaller==6.22.3"
+          # 安装失败时停止，避免后续产生不完整运行包。
+          if ($LASTEXITCODE -ne 0) {
+            throw "安装 PyInstaller 失败。"
+          }
+
+      # 将现有 GUI 和 CLI 入口打包为同一个可执行文件。
+      - name: 构建运行包
+        # 每个打包选项都在下方说明用途。
+        run: |
+          Write-Host "正在构建 Windows x64 运行包……"
+          $buildOptions = @(
+            # 自动覆盖本次构建目录，无需交互确认。
+            '--noconfirm'
+            # 清理打包缓存，避免复用失效的分析结果。
+            '--clean'
+            # 生成包含全部运行依赖的便携目录。
+            '--onedir'
+            # 将依赖放在 exe 同级，保持现有 tools 目录查找位置。
+            '--contents-directory', '.'
+            # 保留从终端启动时的命令行输出能力。
+            '--console'
+            # 双击启动时隐藏程序自行创建的控制台。
+            '--hide-console', 'hide-early'
+            # 不使用额外的 UPX 压缩工具。
+            '--noupx'
+            # 固定可执行文件和便携目录名称。
+            '--name', 'HG-Downloader'
+            # 将生成的 spec 文件放入已忽略的构建目录。
+            '--specpath', 'build'
+            # 临时分析和编译产物保存位置。
+            '--workpath', 'build/pyinstaller'
+            # 最终便携目录保存位置。
+            '--distpath', 'dist'
+            # 复用项目现有统一启动入口。
+            'run.py'
+          )
+          python -m PyInstaller @buildOptions
+          # 构建失败时停止，不能上传旧产物或残缺目录。
+          if ($LASTEXITCODE -ne 0) {
+            throw "Windows 运行包构建失败。"
+          }
+          # 在打包完成后复制文档，避免 spec 目录改变相对数据文件路径。
+          Copy-Item -LiteralPath 'README.md', 'THIRD_PARTY_NOTICES.md' -Destination 'dist/HG-Downloader'
+          # 保留完整的第三方许可证目录。
+          Copy-Item -LiteralPath 'licenses' -Destination 'dist/HG-Downloader/licenses' -Recurse
+          New-Item -ItemType Directory -Path 'dist/HG-Downloader/tools' -Force | Out-Null
+          @'
+          FFmpeg 和 FFprobe 需要自行提供，运行包未捆绑这两个工具。
+          请将 Windows x64 FFmpeg 发行包 bin 目录内的文件放入本目录，保留 ffmpeg.exe、ffprobe.exe 及所需 DLL。
+          也可以将工具目录加入系统 PATH，或通过命令行 --ffmpeg 和 --ffprobe 指定完整路径。
+          '@ | Set-Content -LiteralPath 'dist/HG-Downloader/tools/说明.txt' -Encoding utf8
+
+      # 在上传前检查可执行文件和命令行入口。
+      - name: 验证并压缩运行包
+        # 将完整便携目录压缩成可供下载的 ZIP。
+        run: |
+          Write-Host "正在检查可执行文件和命令行入口……"
+          # 缺少可执行文件时立即失败。
+          if (-not (Test-Path -LiteralPath 'dist/HG-Downloader/HG-Downloader.exe')) {
+            throw "未找到构建生成的 HG-Downloader.exe。"
+          }
+          & './dist/HG-Downloader/HG-Downloader.exe' --help
+          # 命令行冒烟检查失败时禁止上传。
+          if ($LASTEXITCODE -ne 0) {
+            throw "运行包命令行检查失败。"
+          }
+          Write-Host "运行包检查通过，正在压缩完整目录……"
+          Compress-Archive -Path 'dist/HG-Downloader' -DestinationPath 'dist/hg-downloader-windows-x64.zip' -Force
+          Write-Host "运行包已生成，准备上传构建产物。"
+
+      # 将压缩包附加到本次 Actions 运行记录。
+      - name: 上传运行包
+        # 使用官方构建产物上传操作。
+        uses: actions/upload-artifact@v7
+        # 构建产物的下载和保存设置。
+        with:
+          # Actions 页面中显示的下载名称。
+          name: hg-downloader-windows-x64
+          # 上传上一步生成的完整运行包。
+          path: dist/hg-downloader-windows-x64.zip
+          # 文件不存在时使任务失败，避免出现成功但无产物的结果。
+          if-no-files-found: error
+          # 构建产物保留十四天。
+          retention-days: 14
+          # ZIP 已经压缩，上传时跳过重复压缩。
+          compression-level: 0

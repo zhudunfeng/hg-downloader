@@ -20,6 +20,7 @@ This directory contains guidelines for backend development. Fill in each file wi
 | [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
 | [Logging Guidelines](./logging-guidelines.md) | Structured logging, log levels | To fill |
 | [Video Download Contract](./download-contract.md) | API, CLI/GUI boundary, output validation, cancellation and retries | Ready |
+| [Windows Runtime Build](./runtime-build-contract.md) | Manual Actions trigger, portable layout, external tools and artifact checks | Ready |
 
 ---
 

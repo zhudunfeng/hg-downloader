@@ -1,0 +1,31 @@
+{
+  "id": "manual-runtime-build",
+  "name": "manual-runtime-build",
+  "title": "GitHub Actions 手动构建 Windows 运行包",
+  "description": "",
+  "status": "completed",
+  "dev_type": "backend",
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "adun",
+  "assignee": "adun",
+  "createdAt": "2026-11-24",
+  "completedAt": "2026-11-24",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    ".github/workflows/build-runtime.yml",
+    "README.md",
+    "VERIFICATION.md",
+    ".trellis/spec/backend/runtime-build-contract.md"
+  ],
+  "notes": "仅手动工作流和文档已完成；actionlint、PowerShell AST、10项离线回归、原始工作流脚本本地打包、解压独立运行、tools查找和GUI启动关闭均通过。待用户提交后首次手动运行GitHub托管构建与上传。",
+  "meta": {}
+}

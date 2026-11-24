@@ -1,0 +1,5 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": "AGENTS.md", "reason": "中文配置注释与最小变更约束"}
+{"file": ".trellis/spec/backend/download-contract.md", "reason": "GUI CLI 与外部 FFmpeg 契约"}
+{"file": ".trellis/spec/backend/runtime-build-contract.md", "reason": "手动构建与运行包路径契约"}

@@ -59,3 +59,30 @@ python -m pip wheel . --no-deps --no-build-isolation --wheel-dir dist
 
 已验证 wheel 构建成功，并包含派生代码、完整上游 Apache 2.0 许可证和第三方来源说明。
 FFmpeg / FFprobe 仍需通过系统 PATH、自定义路径或项目 tools 目录提供。
+
+## GitHub Actions Windows 运行包
+
+2026-11-24 新增 `.github/workflows/build-runtime.yml`，仅接受 `workflow_dispatch`。
+目标环境为 `windows-2025`、Python 3.14 x64 和 PyInstaller 6.22.3。
+
+在本机 Windows 10 x64、Python 3.14.4 的隔离构建环境中，直接执行工作流中的
+构建与验证脚本，成功生成 `dist/hg-downloader-windows-x64.zip`。
+压缩包包含完整的 `HG-Downloader/`，共 996 个条目、13,110,715 字节。
+
+| 验证项 | 结果 |
+|---|---|
+| 工作流事件、权限及构建产物配置 | 仅手动事件、只读仓库、缺少产物时报错 |
+| actionlint 1.7.11、YAML、三段 PowerShell AST | 通过 |
+| 工作流原始构建脚本及 CLI `--help` | 通过 |
+| ZIP 内 Python DLL、Tkinter、Tcl、说明和完整第三方许可证 | 齐全 |
+| 解压后清空 PATH 和 Python 路径运行 CLI | 通过，无需系统 Python |
+| 缺少 FFmpeg 及 exe 同级 tools 查找 | 按预期失败或找到本地工具 |
+| 冻结 GUI 主窗口创建及正常关闭 | 通过，退出码 0 |
+| 现有 10 项离线回归及 compileall | 全部通过 |
+
+初选 PyInstaller 6.22.0 会为 `hide_console` 生成错误的重复引号，已通过实际打包
+定位并升级至 6.22.3。文档与许可证在打包后复制，避免 `build/` 内生成的 spec
+改变相对数据文件的解析路径。验证没有新增单元测试类。
+
+工作流尚未推送或在 GitHub 托管 runner 上执行；需提交到默认分支后，通过
+Actions 的 Run workflow 验证首次远程构建和 Artifacts 上传。
